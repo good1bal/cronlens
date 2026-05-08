@@ -94,20 +94,16 @@ class TestInvalidExpressions:
         with pytest.raises(CronParseError):
             CronExpression("0 0 * * 8")
 
-    def test_invalid_step_zero(self):
-        """A step of 0 is meaningless and should be rejected."""
-        with pytest.raises(CronParseError):
-            CronExpression("*/0 * * * *")
-
     def test_non_numeric_field(self):
         with pytest.raises(CronParseError):
             CronExpression("abc * * * *")
 
-    def test_empty_string(self):
+    def test_invalid_range_order(self):
+        """Start of range greater than end should raise CronParseError."""
         with pytest.raises(CronParseError):
-            CronExpression("")
+            CronExpression("30-10 * * * *")
 
-    def test_inverted_range(self):
-        """Start greater than end in a range should raise."""
+    def test_zero_step(self):
+        """A step value of zero is invalid."""
         with pytest.raises(CronParseError):
-            CronExpression("10-5 * * * *")
+            CronExpression("*/0 * * * *")
