@@ -1,59 +1,96 @@
-"""Tests for cronlens.visualizer."""
-
-from __future__ import annotations
+"""Tests for cronlens.visualizer — covers both next-run and previous-run rendering."""
 
 from datetime import datetime
 
+import pytest
+
 from cronlens.parser import CronExpression
-from cronlens.visualizer import render_next_runs, _relative_label
+from cronlens.visualizer import render_next_runs, render_prev_runs, _relative_label
+
+REF = datetime(2024, 6, 15, 12, 30, 0)
 
 
-_ANCHOR = datetime(2024, 3, 4, 10, 0, 0)
-
+# ---------------------------------------------------------------------------
+# render_next_runs (existing behaviour, kept for regression)
+# ---------------------------------------------------------------------------
 
 def test_render_contains_header():
     expr = CronExpression("* * * * *")
-    output = render_next_runs(expr, n=3, now=_ANCHOR, color=False)
-    assert "Datetime" in output
-    assert "Relative" in output
+    out = render_next_runs(expr, n=3, ref=REF, color=False)
+    assert "Next 3 runs" in out
 
 
 def test_render_correct_row_count():
     expr = CronExpression("* * * * *")
-    output = render_next_runs(expr, n=4, now=_ANCHOR, color=False)
-    # rows are numbered 1..4
-    for i in range(1, 5):
-        assert str(i) in output
+    out = render_next_runs(expr, n=4, ref=REF, color=False)
+    lines = [l for l in out.splitlines() if l.strip() and "Next" not in l]
+    assert len(lines) == 4
 
 
 def test_render_no_color_has_no_ansi():
-    expr = CronExpression("0 9 * * *")
-    output = render_next_runs(expr, n=2, now=_ANCHOR, color=False)
-    assert "\033[" not in output
+    expr = CronExpression("* * * * *")
+    out = render_next_runs(expr, n=3, ref=REF, color=False)
+    assert "\033[" not in out
 
 
 def test_render_color_contains_ansi():
-    expr = CronExpression("0 9 * * *")
-    output = render_next_runs(expr, n=2, now=_ANCHOR, color=True)
-    assert "\033[" in output
+    expr = CronExpression("* * * * *")
+    out = render_next_runs(expr, n=3, ref=REF, color=True)
+    assert "\033[" in out
 
+
+# ---------------------------------------------------------------------------
+# render_prev_runs
+# ---------------------------------------------------------------------------
+
+def test_render_prev_contains_header():
+    expr = CronExpression("* * * * *")
+    out = render_prev_runs(expr, n=3, ref=REF, color=False)
+    assert "Previous 3 runs" in out
+
+
+def test_render_prev_correct_row_count():
+    expr = CronExpression("* * * * *")
+    out = render_prev_runs(expr, n=5, ref=REF, color=False)
+    lines = [l for l in out.splitlines() if l.strip() and "Previous" not in l]
+    assert len(lines) == 5
+
+
+def test_render_prev_no_color_has_no_ansi():
+    expr = CronExpression("* * * * *")
+    out = render_prev_runs(expr, n=3, ref=REF, color=False)
+    assert "\033[" not in out
+
+
+def test_render_prev_color_contains_ansi():
+    expr = CronExpression("* * * * *")
+    out = render_prev_runs(expr, n=3, ref=REF, color=True)
+    assert "\033[" in out
+
+
+def test_render_prev_contains_ago():
+    expr = CronExpression("* * * * *")
+    out = render_prev_runs(expr, n=3, ref=REF, color=False)
+    assert "ago" in out
+
+
+# ---------------------------------------------------------------------------
+# _relative_label
+# ---------------------------------------------------------------------------
 
 def test_relative_label_minutes():
-    now = datetime(2024, 1, 1, 12, 0)
-    future = datetime(2024, 1, 1, 12, 45)
-    label = _relative_label(future, now)
+    future = datetime(2024, 6, 15, 12, 45)
+    label = _relative_label(future, REF)
     assert "minute" in label
 
 
 def test_relative_label_hours():
-    now = datetime(2024, 1, 1, 12, 0)
-    future = datetime(2024, 1, 1, 15, 0)
-    label = _relative_label(future, now)
+    future = datetime(2024, 6, 15, 15, 30)
+    label = _relative_label(future, REF)
     assert "hour" in label
 
 
 def test_relative_label_days():
-    now = datetime(2024, 1, 1, 12, 0)
-    future = datetime(2024, 1, 3, 12, 0)
-    label = _relative_label(future, now)
+    future = datetime(2024, 6, 20, 12, 30)
+    label = _relative_label(future, REF)
     assert "day" in label
