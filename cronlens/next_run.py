@@ -15,6 +15,17 @@ def _advance_to_next_minute(dt: datetime) -> datetime:
     return dt.replace(second=0, microsecond=0) + timedelta(minutes=1)
 
 
+def _matches(expr: CronExpression, dt: datetime) -> bool:
+    """Return True if *dt* satisfies all fields of *expr*."""
+    return (
+        dt.minute in expr.minutes
+        and dt.hour in expr.hours
+        and dt.day in expr.days
+        and dt.month in expr.months
+        and dt.weekday() in expr.weekdays
+    )
+
+
 def iter_next_runs(expr: CronExpression, after: datetime | None = None) -> Iterator[datetime]:
     """Yield datetime objects for each future trigger of *expr*.
 
@@ -28,17 +39,9 @@ def iter_next_runs(expr: CronExpression, after: datetime | None = None) -> Itera
 
     while iterations < _MAX_ITERATIONS:
         iterations += 1
-        if (
-            current.minute in expr.minutes
-            and current.hour in expr.hours
-            and current.day in expr.days
-            and current.month in expr.months
-            and current.weekday() in expr.weekdays
-        ):
+        if _matches(expr, current):
             yield current
-            current += timedelta(minutes=1)
-        else:
-            current += timedelta(minutes=1)
+        current += timedelta(minutes=1)
 
 
 def next_runs(expr: CronExpression, n: int = 5, after: datetime | None = None) -> List[datetime]:
