@@ -31,6 +31,17 @@ def _relative_label(dt: datetime, ref: datetime) -> str:
     return f"{days} day{'s' if days != 1 else ''}"
 
 
+def _color_codes(color: bool) -> tuple[str, str, str, str, str]:
+    """Return a tuple of (bold, reset, green, cyan, dim) ANSI codes.
+
+    When *color* is ``False`` all codes are empty strings so the output
+    remains plain text suitable for piping or logging.
+    """
+    if color:
+        return _ANSI_BOLD, _ANSI_RESET, _ANSI_GREEN, _ANSI_CYAN, _ANSI_DIM
+    return "", "", "", "", ""
+
+
 def render_next_runs(
     expr: CronExpression,
     n: int = 5,
@@ -41,10 +52,7 @@ def render_next_runs(
     if ref is None:
         ref = datetime.now()
     runs = next_runs(expr, n=n, ref=ref)
-    bold = _ANSI_BOLD if color else ""
-    reset = _ANSI_RESET if color else ""
-    green = _ANSI_GREEN if color else ""
-    dim = _ANSI_DIM if color else ""
+    bold, reset, green, _, dim = _color_codes(color)
     lines = [f"{bold}Next {n} runs:{reset}"]
     for dt in runs:
         label = _relative_label(dt, ref)
@@ -63,10 +71,7 @@ def render_prev_runs(
     if ref is None:
         ref = datetime.now()
     runs = prev_runs(expr, n=n, ref=ref)
-    bold = _ANSI_BOLD if color else ""
-    reset = _ANSI_RESET if color else ""
-    cyan = _ANSI_CYAN if color else ""
-    dim = _ANSI_DIM if color else ""
+    bold, reset, _, cyan, dim = _color_codes(color)
     lines = [f"{bold}Previous {n} runs:{reset}"]
     for dt in runs:
         label = _relative_label(dt, ref)
