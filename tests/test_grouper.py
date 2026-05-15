@@ -86,3 +86,12 @@ def test_weekly_expression_grouped():
 def test_monthly_expression_grouped():
     result = group([MONTHLY])
     assert "monthly" in result.groups
+
+
+def test_multiple_invalid_expressions_all_collected():
+    """All invalid expressions should be collected, not just the first."""
+    invalid_exprs = ["bad-cron", "also-bad", "* * * *"]  # too few fields
+    result = group(invalid_exprs)
+    assert len(result.invalid) == len(invalid_exprs)
+    for expr in invalid_exprs:
+        assert expr in result.invalid
