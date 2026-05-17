@@ -12,6 +12,7 @@ from cronlens.cli_export import build_export_parser, run_export
 
 
 def _make_args(**kwargs) -> argparse.Namespace:
+    """Return an argparse.Namespace with sensible defaults for export tests."""
     defaults = {
         "expression": "* * * * *",
         "fmt": "json",
@@ -33,6 +34,16 @@ def test_run_export_json_valid_json(capsys):
     captured = capsys.readouterr()
     data = json.loads(captured.out)
     assert "expression" in data
+
+
+def test_run_export_json_contains_next_and_prev(capsys):
+    """JSON output should include both next and prev occurrence lists."""
+    run_export(_make_args(next_n=3, prev_n=2))
+    data = json.loads(capsys.readouterr().out)
+    assert "next" in data
+    assert "prev" in data
+    assert len(data["next"]) == 3
+    assert len(data["prev"]) == 2
 
 
 def test_run_export_text_exit_zero(capsys):
